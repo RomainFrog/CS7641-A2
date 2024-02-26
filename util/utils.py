@@ -16,7 +16,6 @@ import copy
 
 logging.basicConfig(level=logging.WARNING)
 
-
 def run_experiment_multi_seed(runner, seeds):
     # create a list of runners with the same parameters but different seeds
     runners = [copy.deepcopy(runner) for _ in seeds]
@@ -67,7 +66,7 @@ def runner_results_to_stats(results):
 
 
 def plot_fitness_iteration(
-    df_mean, df_std, df_min, df_max, runnner_name, problem_name=""
+    df_mean, df_std, df_min, df_max, runnner_name, problem_name="", x_axis="Iteration"
 ):
     # Plot the fitness over the iterations
     plt.figure()
@@ -75,35 +74,35 @@ def plot_fitness_iteration(
     plt.figure(figsize=(10, 5))
     # Font size
     plt.rc("font", size=16)
-    plt.plot(df_mean["Iteration"], df_mean["Fitness"], label="RHC", color="b")
+    plt.plot(df_mean[x_axis], df_mean["Fitness"], label=f"{runnner_name}", color="b")
     plt.plot(
-        df_max["Iteration"],
+        df_max[x_axis],
         df_max["Fitness"],
-        label="RHC Max",
+        label=f"{runnner_name} Max",
         color="r",
         linestyle="--",
     )
     plt.plot(
-        df_min["Iteration"],
+        df_min[x_axis],
         df_min["Fitness"],
-        label="RHC Min",
+        label=f"{runnner_name} Min",
         color="g",
         linestyle="--",
     )
     plt.fill_between(
-        df_mean["Iteration"],
+        df_mean[x_axis],
         df_mean["Fitness"] - df_std["Fitness"],
         df_mean["Fitness"] + df_std["Fitness"],
         color="b",
         alpha=0.2,
-        label="RHC Std",
+        label=f"{runnner_name} Std",
     )
-    plt.xlabel("Iterations")
+    plt.xlabel(x_axis)
     plt.ylabel("Fitness")
-    plt.title(f"Fitness over iterations ({runnner_name})")
+    plt.title(f"Fitness over {x_axis} ({runnner_name})")
     plt.legend()
     plt.savefig(
-        f"figures/{problem_name}_fitness_over_iter_{runnner_name}.pdf",
+        f"figures/{problem_name}_fitness_over_{x_axis}_{runnner_name}.pdf",
         format="pdf",
         bbox_inches="tight",
     )
@@ -120,18 +119,18 @@ def plot_fitness_fevals(
     plt.figure(figsize=(10, 5))
     # Font size
     plt.rc("font", size=16)
-    plt.plot(df_mean["FEvals"], df_mean["Fitness"], label="RHC", color="b")
+    plt.plot(df_mean["FEvals"], df_mean["Fitness"], label=f"{runnner_name}", color="b")
     plt.plot(
         df_max["FEvals"],
         df_max["Fitness"],
-        label="RHC Max",
+        label=f"{runnner_name} Max",
         color="r",
         linestyle="--",
     )
     plt.plot(
         df_min["FEvals"],
         df_min["Fitness"],
-        label="RHC Min",
+        label=f"{runnner_name} Min",
         color="g",
         linestyle="--",
     )
@@ -141,7 +140,7 @@ def plot_fitness_fevals(
         df_mean["Fitness"] + df_std["Fitness"],
         color="b",
         alpha=0.2,
-        label="RHC Std",
+        label=f"{runnner_name} Std",
     )
     plt.xlabel("FEvals")
     plt.ylabel("Fitness")
@@ -162,7 +161,7 @@ def get_optimal_hyperparameters(hp_mean):
 
 
 def plot_fitness_vs_hyperparameter(
-    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name=""
+    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration"
 ):
     # Plot the fitness over the hyperparameter
     if hyperparameter not in hp_mean.columns:
@@ -178,7 +177,7 @@ def plot_fitness_vs_hyperparameter(
         hp_mean = hp_mean[hp_mean[key] == value]
         hp_std = hp_std[hp_std[key] == value]
 
-    plt.figure()
+    # plt.figure()
     # Fig size
     plt.figure(figsize=(10, 5))
     # Font size
@@ -187,20 +186,27 @@ def plot_fitness_vs_hyperparameter(
     for H_value in hp_mean[hyperparameter].unique():
         temp_df = hp_mean[hp_mean[hyperparameter] == H_value]
         temp_df_std = hp_std[hp_mean[hyperparameter] == H_value]
-        plt.plot(
-            temp_df["Iteration"],
-            temp_df["Fitness"],
-            label=f"{hyperparameter} = {H_value}",
-        )
+        if type(hyperparameter) == str:
+            plt.plot(
+                temp_df[x_axis],
+                temp_df["Fitness"],
+                label=f"{hyperparameter} = {H_value}",
+            )
+        else:
+            plt.plot(
+                temp_df[x_axis],
+                temp_df["Fitness"],
+                label=f"{hyperparameter} = {H_value:.2f}",
+            )
 
         print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()}')
 
-    plt.xlabel("Iterations")
+    plt.xlabel(x_axis)
     plt.ylabel("Fitness")
-    plt.title(f"Fitness over {hyperparameter} ({runnner_name})")
+    plt.title(f"Fitness over {x_axis} ({runnner_name})")
     plt.legend()
     plt.savefig(
-        f"figures/{problem_name}_fitness_over_{hyperparameter}_{runnner_name}.pdf",
+        f"figures/{problem_name}_fitness_over_{x_axis}_{hyperparameter}_{runnner_name}.pdf",
         format="pdf",
         bbox_inches="tight",
     )
