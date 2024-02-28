@@ -4,6 +4,7 @@ from mlrose_hiive import SARunner, GARunner, MIMICRunner, RHCRunner
 from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
+import string
 import pandas as pd
 from pathos.multiprocessing import ProcessingPool as Pool
 
@@ -21,6 +22,7 @@ def run_experiment_multi_seed(runner, seeds):
     runners = [copy.deepcopy(runner) for _ in seeds]
     for i, seed in enumerate(seeds):
         runners[i].seed = seed
+        print(f"Runner {i} seed: {runners[i].seed}")
 
     with Pool() as pool:
         results_list = pool.map(run_experiment, runners)
@@ -161,7 +163,7 @@ def get_optimal_hyperparameters(hp_mean):
 
 
 def plot_fitness_vs_hyperparameter(
-    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration"
+    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration", y_lim=(-2000, -1100)
 ):
     # Plot the fitness over the hyperparameter
     if hyperparameter not in hp_mean.columns:
@@ -180,6 +182,8 @@ def plot_fitness_vs_hyperparameter(
     # plt.figure()
     # Fig size
     plt.figure(figsize=(10, 5))
+    # set y min to -2000
+    plt.ylim(y_lim[0], y_lim[1])
     # Font size
     plt.rc("font", size=16)
     # Use a for loop using the temperature_list for each schedule type
@@ -199,7 +203,7 @@ def plot_fitness_vs_hyperparameter(
                 label=f"{hyperparameter} = {H_value:.2f}",
             )
 
-        print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()}')
+        print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()}, Time: {temp_df["Time"].max()}')
 
     plt.xlabel(x_axis)
     plt.ylabel("Fitness")
@@ -273,6 +277,22 @@ def show_TSP_map(problem, ordered_state):
                 fc="green" if i == ordered_state[0] else "red",
             ),
         )
+
+    plt.tight_layout()
+    plt.show()
+
+
+def plotTSPProblem(problem):
+    fig, ax = plt.subplots(1)  # Prepare 2 plots
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+    for i, (x, y) in enumerate(problem.coords):
+        ax.scatter(x, y, s=200, c='cornflowerblue')  # plot A
+    node_labels = {k: str(v) for k, v in enumerate(string.ascii_uppercase) if k < len(problem.source_graph.nodes)}
+    for i in node_labels.keys():
+        x, y = problem.coords[i]
+        plt.text(x, y, node_labels[i], ha="center", va="center", c='white', fontweight='bold',
+                 bbox=dict(boxstyle=f"circle,pad=0.15", fc='cornflowerblue'))
 
     plt.tight_layout()
     plt.show()
