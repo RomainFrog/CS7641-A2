@@ -156,11 +156,14 @@ def plot_fitness_fevals(
     plt.show()
 
 
-def get_optimal_hyperparameters(hp_mean):
+def get_optimal_hyperparameters(hp_mean, HP_LIST):
     # Get the optimal hyperparameters
-    optimal_hyperparameters = hp_mean[hp_mean["Fitness"] == hp_mean["Fitness"].max()]
-    return optimal_hyperparameters.iloc[0, :]
+    optimal_hyperparameters = {}
+    best_run = hp_mean[hp_mean["Fitness"] == hp_mean["Fitness"].max()]
+    for key in HP_LIST:
+        optimal_hyperparameters[key] = best_run[key].values[0]
 
+    return optimal_hyperparameters
 
 def plot_fitness_vs_hyperparameter(
     hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration", y_lim=(-2000, -1100)
