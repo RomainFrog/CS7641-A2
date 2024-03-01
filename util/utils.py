@@ -166,7 +166,7 @@ def get_optimal_hyperparameters(hp_mean, HP_LIST):
     return optimal_hyperparameters
 
 def plot_fitness_vs_hyperparameter(
-    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration", y_lim=(-2000, -1100)
+    hp_mean, hp_std, optimal_HP_dict, hyperparameter, runnner_name, problem_name="", x_axis="Iteration", y_lim=(-2000, -1100), show_std=True
 ):
     # Plot the fitness over the hyperparameter
     if hyperparameter not in hp_mean.columns:
@@ -205,8 +205,15 @@ def plot_fitness_vs_hyperparameter(
                 temp_df["Fitness"],
                 label=f"{hyperparameter} = {H_value:.2f}",
             )
+        if show_std:
+            plt.fill_between(
+                temp_df[x_axis],
+                temp_df["Fitness"] - temp_df_std["Fitness"],
+                temp_df["Fitness"] + temp_df_std["Fitness"],
+                alpha=0.2,
+            )
 
-        print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()}, Time: {temp_df["Time"].max()}')
+        print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()} (+/- {temp_df_std["Fitness"].max()}), Time: {temp_df["Time"].max()}')
 
     plt.xlabel(x_axis)
     plt.ylabel("Fitness")
