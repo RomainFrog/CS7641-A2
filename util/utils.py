@@ -183,7 +183,7 @@ def plot_fitness_vs_hyperparameter(
 
     # plt.figure()
     # Fig size
-    plt.figure(figsize=(5, 4))
+    plt.figure(figsize=(10, 5))
     # set y min to -2000
     plt.ylim(y_lim[0], y_lim[1])
     # Font size
@@ -319,6 +319,18 @@ def get_kcolor(difficulty):
     else:
         raise ValueError(f"Difficulty {difficulty} not found")
     
+
+def get_four_peaks(difficulty):
+
+    fitness  = mlrose_hiive.FourPeaks(t_pct = 0.099)
+    if difficulty == "easy":
+        return mlrose_hiive.DiscreteOpt(length = 30, fitness_fn = fitness, maximize=True, max_val=2)
+    elif difficulty == "medium":
+        return mlrose_hiive.DiscreteOpt(length = 50, fitness_fn = fitness, maximize=True, max_val=2)
+    elif difficulty == "hard":
+        return mlrose_hiive.DiscreteOpt(length = 100, fitness_fn = fitness, maximize=True, max_val=2)
+    else:
+        raise ValueError(f"Difficulty {difficulty} not found")
 
 def get_perf_stats(results, param1, param2):
 
