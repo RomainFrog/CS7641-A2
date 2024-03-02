@@ -22,7 +22,6 @@ def run_experiment_multi_seed(runner, seeds):
     runners = [copy.deepcopy(runner) for _ in seeds]
     for i, seed in enumerate(seeds):
         runners[i].seed = seed
-        print(f"Runner {i} seed: {runners[i].seed}")
 
     with Pool() as pool:
         results_list = pool.map(run_experiment, runners)
@@ -184,7 +183,7 @@ def plot_fitness_vs_hyperparameter(
 
     # plt.figure()
     # Fig size
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(5, 4))
     # set y min to -2000
     plt.ylim(y_lim[0], y_lim[1])
     # Font size
@@ -306,3 +305,44 @@ def plotTSPProblem(problem):
 
     plt.tight_layout()
     plt.show()
+
+
+def get_kcolor(difficulty):
+    if difficulty == "easy":
+        return MaxKColorGenerator().generate(seed=42, number_of_nodes=20, max_connections_per_node=2, max_colors=3, maximize=True)
+    elif difficulty == "medium":
+        return MaxKColorGenerator().generate(seed=42, number_of_nodes=30, max_connections_per_node=3, max_colors=4, maximize=True)
+    elif difficulty == "hard":
+        return MaxKColorGenerator().generate(seed=42, number_of_nodes=50, max_connections_per_node=6, max_colors=4, maximize=True)
+    elif difficulty == "extreme":
+        return MaxKColorGenerator().generate(seed=42, number_of_nodes=75, max_connections_per_node=6, max_colors=4, maximize=True)
+    else:
+        raise ValueError(f"Difficulty {difficulty} not found")
+    
+
+def get_perf_stats(results, param1, param2):
+
+    mmc_hp_mean, mmc_hp_std, mmc_hp_min, mmc_hp_max = runner_results_to_stats(results)
+
+    mmc_optimal_HP = get_optimal_hyperparameters(mmc_hp_mean, [param1, param2])
+
+
+    best_run = mmc_hp_mean[(mmc_hp_mean[param1] == mmc_optimal_HP[param1]) & (mmc_hp_mean[param2] == mmc_optimal_HP[param2])]
+    best_run_max = mmc_hp_max[(mmc_hp_max[param1] == mmc_optimal_HP[param1]) & (mmc_hp_max[param2] == mmc_optimal_HP[param2])]
+    print(mmc_optimal_HP)
+    print(f'Mean Fitness: {best_run["Fitness"].max()}')
+    print(f'MAX fitness: {best_run_max["Fitness"].max()} ')
+    print(f'FEvals: {best_run["FEvals"].max()}')
+    print(f'Time: {best_run["Time"].max()}')
+
+    # Select the run that reaches 176 of fitness
+    MAX_FITNESS = mmc_hp_max['Fitness'].max()
+    best_runs = mmc_hp_max[(mmc_hp_max['Fitness'] == MAX_FITNESS)]
+
+    # select the best run with the lowest number of fevals
+    best_run = best_runs[(best_runs['FEvals'] == best_runs['FEvals'].min())]
+    pd.set_option("display.max_columns", None)
+    pd.set_option("display.expand_frame_repr", False)
+    pd.set_option("display.max_rows", None)
+    print(best_run)
+
