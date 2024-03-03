@@ -192,11 +192,12 @@ def plot_fitness_vs_hyperparameter(
     for H_value in hp_mean[hyperparameter].unique():
         temp_df = hp_mean[hp_mean[hyperparameter] == H_value]
         temp_df_std = hp_std[hp_mean[hyperparameter] == H_value]
+        print(f"HP: {hyperparameter}, {type(hyperparameter)}")
         if type(hyperparameter) == str:
             plt.plot(
                 temp_df[x_axis],
                 temp_df["Fitness"],
-                label=f"{hyperparameter} = {H_value}",
+                label=f"{hyperparameter} = {H_value:.2f}",
             )
         else:
             plt.plot(
@@ -214,6 +215,8 @@ def plot_fitness_vs_hyperparameter(
 
         print(f'{hyperparameter} = {H_value} Fitness: {temp_df["Fitness"].max()} (+/- {temp_df_std["Fitness"].max()}), Time: {temp_df["Time"].max()}')
 
+    # Add a hline in red for the max fitness
+    plt.axhline(y=189, color="r", linestyle="--", label="Max Fitness (189.0)")
     plt.xlabel(x_axis)
     plt.ylabel("Fitness")
     plt.title(f"Fitness over {x_axis} ({runnner_name})")
@@ -235,6 +238,7 @@ def plot_HP_heatmap(df, x, y, runner_name, problem_name=""):
         .sort_values(by="Fitness", ascending=False)
     )
     heatmap_data = best_fitness.pivot_table(values="Fitness", index=y, columns=x)
+    print(heatmap_data)
     plt.figure(figsize=(10, 8))
     sns.heatmap(heatmap_data, cmap="viridis", fmt=".2f", linewidths=0.5)
     plt.title(f"Best Fitness for Each Set of Hyperparameters ({runner_name})")
