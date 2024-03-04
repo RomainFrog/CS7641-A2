@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import string
 import pandas as pd
 from pathos.multiprocessing import ProcessingPool as Pool
+import ucimlrepo
 
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -362,3 +363,182 @@ def get_perf_stats(results, param1, param2):
     pd.set_option("display.max_rows", None)
     print(best_run)
 
+
+
+############################################################################################################
+#
+# NN related functions
+#
+############################################################################################################
+    
+from sklearn.metrics import accuracy_score, log_loss
+
+def fit_multiple_seeds(model, X_train, y_train, X_test, y_test, seeds):
+    scores = []
+    losses = []
+    for seed in tqdm(seeds):
+        model.set_params(random_state=seed)
+        model.fit(X_train, y_train)
+        losses.append(copy.deepcopy(model.fitness_curve))
+        y_test_pred = model.predict(X_test)
+        scores.append(accuracy_score(y_test, y_test_pred))
+    return losses, scores
+
+
+
+def train_model(model, X_train, y_train, X_val, y_val, n_epochs=500):
+    train_losses = []
+    val_losses = []
+    train_score = []
+    validation_score = []
+    for i in tqdm(range(n_epochs)):
+        # Fit for one iteration
+        model.partial_fit(X_train, y_train)
+
+        y_train_pred = model.predict(X_train)
+        train_score.append(accuracy_score(y_train, y_train_pred))
+
+        y_val_pred = model.predict(X_val)
+        validation_score.append(accuracy_score(y_val, y_val_pred))
+
+        train_losses.append(model.fitness_curve[0][0])
+
+        # Validation loss
+        y_val_probas = model.predicted_probs
+        val_losses.append(log_loss(y_val, y_val_probas))
+
+
+    return train_losses, val_losses, train_score, validation_score
+
+
+def train_model_SA(model, X_train, y_train, X_val, y_val, n_epochs=500):
+    train_losses = []
+    val_losses = []
+    train_score = []
+    validation_score = []
+    init_temp= model.schedule.init_temp
+    for i in tqdm(range(n_epochs)):
+        # Fit for one iteration
+        if i!=0:
+             if init_temp> 0.001:
+                #init_temp= init_temp - (0.001 * i)
+                init_temp= init_temp*np.exp(-1*0.005*i)
+                model.schedule.init_temp=init_temp
+        model.partial_fit(X_train, y_train)
+
+        y_train_pred = model.predict(X_train)
+        train_score.append(accuracy_score(y_train, y_train_pred))
+
+        y_val_pred = model.predict(X_val)
+        validation_score.append(accuracy_score(y_val, y_val_pred))
+
+        train_losses.append(model.fitness_curve[0][0])
+
+        # Validation loss
+        y_val_probas = model.predicted_probs
+        val_losses.append(log_loss(y_val, y_val_probas))
+
+        
+
+    return train_losses, val_losses, train_score, validation_score
+
+# def train_model_multi_seed(model, X_train, y_train, X_val, y_val, n_epochs=500, seeds=[42]):
+#     train_losses = []
+#     val_losses = []
+#     train_score = []
+#     validation_score = []
+
+#     for seed in seeds:
+#         current_model = copy.deepcopy(model)
+#         current_model.set_params(random_state=seed)
+#         results = train_model(current_model, X_train, y_train, X_val, y_val, n_epochs)
+#         train_losses.append(results[0])
+#         val_losses.append(results[1])
+#         train_score.append(results[2])
+#         validation_score.append(results[3])
+#         # Reset the weights
+#         # model.fitted_weights = []
+
+#     return train_losses, val_losses, train_score, validation_score
+
+
+
+
+
+
+
+
+
+
+def load_hand_written_digits():
+    from ucimlrepo import fetch_ucirepo 
+  
+    # fetch dataset 
+    digits = fetch_ucirepo(id=80) 
+    
+    # data (as pandas dataframes) 
+    X = digits.data.features 
+    y = digits.data.targets 
+    
+    X['target'] = y
+
+    return X
+
+
+
+def load_titanic():
+    """
+    Load titanic dataset from seaborn
+    """
+    import seaborn as sns
+
+    df = sns.load_dataset('titanic')
+    # remove the deck column
+    df = df.drop('deck', axis=1)
+    # remove people who no age
+    df = df.dropna(subset=['age'])
+    # drop all remaining missing values
+    df = df.dropna()
+    # rename alive column to target and put it at the end
+    df = df.rename(columns={'alive': 'target'})
+    # convert target to 0 and 1
+    df['target'] = df['target'].map({'yes': 1, 'no': 0})
+    # convert alone to 0 and 1
+    df['alone'] = df['alone'].map({True: 1, False: 0})
+    # drop adult_male column
+    df = df.drop('adult_male', axis=1)
+    # drop class column
+    df = df.drop('class', axis=1)
+    # drop who column
+    df = df.drop('who', axis=1)
+    # create adult column based on age (int)
+    df['adult'] = df['age'].apply(lambda x: 1 if x >= 18 else 0)
+    # drop embarked column
+    df = df.drop('embarked', axis=1)
+
+    # translate embarked_town to one hot encoding (int)
+    embark_town = pd.get_dummies(df['embark_town'])
+    df = df.join(embark_town)
+    df = df.drop('embark_town', axis=1)
+    # cast Cherbourg, Queenstown, Southampton to int
+    df['Cherbourg'] = df['Cherbourg'].astype(int)
+    df['Queenstown'] = df['Queenstown'].astype(int)
+    df['Southampton'] = df['Southampton'].astype(int)
+
+    # translate sex to one hot encoding (int)
+    sex = pd.get_dummies(df['sex'])
+    df = df.join(sex)
+    df = df.drop('sex', axis=1)
+
+    # cast sex to int
+    df['male'] = df['male'].astype(int)
+    df['female'] = df['female'].astype(int)
+
+    # drop survived column
+    df = df.drop('survived', axis=1)
+
+    # reset index
+    df = df.reset_index(drop=True)
+
+    # 
+    return df
